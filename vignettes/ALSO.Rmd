@@ -34,3 +34,27 @@ states <- state.x77 %>% as_tibble()
 
 states
 ```
+
+This dataset is relatively small at 50 rows and 8 variables. Later on we'll explore a higher dimenional dataset and observe the results.
+
+# Data Processing
+
+It is customary to standardize numeric variables prior to predictive modeling in order to eliminate the effects of differences in original measurement scales. Let's apply the common z-standardization technique.
+
+```{r}
+states_scaled <- states %>%
+    mutate_all(funs(scale))
+```
+
+# ALSO with Random Forest
+
+A random forest works quite nicely in the context of ALSO for a few reasons:
+
+1. can do prediction or classification
+2. robust due to ensembling
+3. can detect nonlinear relationships
+
+```{r}
+rf_also <- ALSO(data = states_scaled, model_function = randomForest::randomForest,
+                cross_validate = FALSE, scores_only = F)
+```
