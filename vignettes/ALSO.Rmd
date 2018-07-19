@@ -1,0 +1,36 @@
+---
+title: "Attribute Wise Learning for Scoring Outliers"
+author: "Danny Morris"
+date: "July 18, 2018"
+output: 
+    html_document:
+        theme: lumen
+        toc: true
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      cache = TRUE)
+```
+
+# Overview
+
+Attirubte-wise Learning for SCoring Outliers (ALSO) is an outlier detection technique for standard multidimensional datasets. For each variable in the dataset, a predictive model is constructed in which the remaining features are predictors. When a feature is generally predictable with good accuracy, observations deviating significantly from predicted values may be outliers. Observations with significant deviations across many predictable features may be strong outliers.
+
+This document will illustrate the use of the **ALSO package**. It was created for the sole purpose of making the ALSO technique easily available to R users. The package currently contains a single function, `ALSO()`.
+
+```{r}
+# devtools::install_github("dannymorris/ALSO")
+library(ALSO)
+
+library(dplyr)
+```
+
+# Data
+
+```{r}
+states <- state.x77 %>% as_tibble()
+
+states
+```
