@@ -18,3 +18,8 @@ check_class_structure <- function(data, structure, numeric_only = NULL) {
         TRUE
     }
 }
+
+clear_colname_spaces <- function(data, substitute = "") {
+    colnames(data) <- gsub(" ", substitute, colnames(data))
+    data
+}

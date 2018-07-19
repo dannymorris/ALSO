@@ -51,7 +51,9 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
     }
 
     if ("character" %in% sapply(data, class)) {
-        data %<>% dplyr::mutate_if(is.character, as.factor)
+        data %<>%
+            dplyr::mutate_if(is.character, as.factor) %>%
+            clear_colname_spaces()
     }
 
 
