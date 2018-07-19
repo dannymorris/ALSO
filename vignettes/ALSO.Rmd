@@ -58,3 +58,48 @@ A random forest works quite nicely in the context of ALSO for a few reasons:
 rf_also <- ALSO(data = states_scaled, model_function = randomForest::randomForest,
                 cross_validate = FALSE, scores_only = F)
 ```
+
+### Output contents
+
+```{r}
+names(rf_also)
+```
+
+### Outlier scores
+
+```{r}
+plot(density(rf_also$scores), main = "Outlier Scores Density Estimate",
+     xlab = "ALSO Score")
+```
+
+Present of outliers reflected in the severe right skewness of the distribution of outlier scores.
+
+### Feature weights
+
+```{r}
+rf_also$adjusted_feature_weights %>% 
+    sort(decreasing = T) %>%
+    barplot(las = 2, main = "Adjusted Feature Weights")
+```
+
+The ALSO technique using a random forest as the regressor is detecting outliers on the basis of Murder, HSGrad, Illiteracy, and LifeExp. Note that none of the features are very predictable.
+
+# Visualization
+
+Principal components analysis is a great technique for visualizing multidimensional data in fewer dimensions.
+
+```{r}
+pca_states <- princomp(states_scaled)
+summary(pca_states, loadings = T)
+```
+
+It appears that the top 3 principal components explain nearly 80% of the variation in the original dataset.
+
+```{r}
+pca_states$scores %>%
+    as_tibble() %>%
+    mutate(outlier_scores = rf_also$scores) %>%
+    ggplot(aes(x = Comp.1, y = Comp.2)) +
+    geom_point(aes(color = outlier_scores), size = 3) +
+    theme_minimal()
+```

@@ -23,3 +23,24 @@ clear_colname_spaces <- function(data, substitute = "") {
     colnames(data) <- gsub(" ", substitute, colnames(data))
     data
 }
+
+
+square_errors <- function(predictions, actual) {
+
+    # inputs must be vectors
+    # if (!is.vector(predictions) && !is.vector(actual)) {
+    #     stop("arguments need to be vectors")
+    # }
+
+    if ("character" %in% sapply(list(predictions, actual), class))
+        stop("arguments should be of class numeric or factor")
+
+    # if
+    if (class(predictions) == "factor" | class(actual) == "factor") {
+        squared_errors <- (as.numeric(predictions) - as.numeric(actual))^2
+    } else {
+        squared_errors <- (predictions - actual)^2
+    }
+
+    return(squared_errors)
+}
