@@ -125,7 +125,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
 
     adjusted_feature_weights <- adjusted_feature_rmse %>%
         ifelse(. > 1, 1, .) %>%
-        one_minus_x()
+        purrr::map_dbl(., function(x) 1 - x)
 
     outlier_scores <- purrr::map2(squared_prediction_errors, adjusted_feature_weights,
                                   function(x, y) x * y) %>%
