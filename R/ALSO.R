@@ -32,6 +32,7 @@
 #' dtree_also$squared_prediction_errors
 #' dtree_also$feature_rmse
 #' dtree_also$feature_weights
+#' @importFrom magrittr %<>%
 #' @export
 
 ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
@@ -52,9 +53,10 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
 
     if ("character" %in% sapply(data, class)) {
         data %<>%
-            dplyr::mutate_if(is.character, as.factor) %>%
-            clear_colname_spaces()
+            dplyr::mutate_if(is.character, as.factor)
     }
+
+    data %<>% clear_colname_spaces()
 
 
     #
