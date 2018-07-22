@@ -1,3 +1,13 @@
+---
+title: "Attribute-Wise Learning for Scoring OUtliers"
+author: "Danny Morris"
+date: "July 22, 2018"
+output:
+    html_document:
+        keep_md: true
+---
+
+
 # Attribute-Wise Learning for Scoring Outliers (ALSO)
 
 *Attribute-wise Learning for Scoring Outliers* (ALSO) is an unsupervised anomaly detection algorithm for multidimensional data. The main goal is to automate separate predictive models for each feature in the dataset. In each model, one feature in the dataset is the target and the remaining are predictors. A classifier or regressor is called to model the relationships. Observations are scored and compared to true values, and a numerical outlier score is returned for each observation based on the magnitude of deviation from expected values. Given the vector of numeric outlier scores, simple univariate techniques can be used to extract insights. Larger outlier scores suggest greater outlierness.
