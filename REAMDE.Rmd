@@ -4,7 +4,7 @@
 
 # Install
 
-```{r}
+```{r, eval = F}
 devtools::install_github("dannymorris/ALSO")
 ```
 
@@ -16,23 +16,54 @@ Here we'll examine the `datasets::state.x77` dataset. It contains 50 observation
 
 #### Quick data prep
 
+Currently only data frame or tibbles are supported as inputs to the function.
+
 ```{r}
+library(dplyr)
+
 # z-standardize all columns
 zstd <- function(x) {
     (x - mean(x)) / sd(x)
 }
 
+
 state_tbl <- state.x77 %>%
-    as_tibble() %>%
+    dplyr::as_tibble() %>%
     dplyr::mutate_all(zstd)
 ```
 
 #### Using the ALSO() function
 
 ```{r}
-rf_also <- ALSO::ALSO(data = df,
+rf_also <- ALSO::ALSO(data = state_tbl,
                       model_function = randomForest::randomForest,
                       cross_validate = TRUE,
                       n_folds = 5,
                       scores_only = TRUE)
+
+rf_also
+```
+
+Here we return only the outlier scores. Observations are given out-of-sample scores via 5-fold cross validation.
+
+```{r}
+lm_also <- ALSO::ALSO(data = state_tbl,
+                      model_function = lm,
+                      cross_validate = TRUE,
+                      n_folds = 5,
+                      scores_only = FALSE)
+
+lm_also
+```
+
+Here we use Ordinary Least Squares regression as the base regressor, 5-fold cross validation for scoring, and a list containg various artifacts from the algorithm:
+
+```{r, eval = F}
+lm_also$scores
+
+lm_also$squared_prediction_errors
+
+lm_also$adjusted_feature_rmse
+
+lm_also$adjusted_feature_weights
 ```

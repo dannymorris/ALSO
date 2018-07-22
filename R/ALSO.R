@@ -104,9 +104,9 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
         }) %>%
             purrr::map(., bind_cols) %>%  # restore test folds with predictions
             dplyr::bind_rows() %>% #
-            mutate(fold_id = purrr::flatten_int(folds)) %>% # index rows to match original data
-            arrange(fold_id) %>%
-            select(-fold_id)
+            dplyr::mutate(fold_id = purrr::flatten_int(folds)) %>% # index rows to match original data
+            dplyr::arrange(fold_id) %>%
+            dplyr::select(-fold_id)
 
     } else {
 
@@ -155,7 +155,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
                 adjusted_feature_rmse = adjusted_feature_rmse,
                 adjusted_feature_weights = adjusted_feature_weights
             ) %>%
-                map_at(., 2:4, function(x) setNames(x, nm = original_colnames))
+                purrr::map_at(., 2:4, function(x) setNames(x, nm = original_colnames))
         )
     }
 }
