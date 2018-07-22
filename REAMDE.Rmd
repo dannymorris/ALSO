@@ -14,13 +14,16 @@ In *Outlier Analysis* (C.C Aggarwal. Springer, 2017), the author recommends the 
 
 Here we'll examine the `datasets::state.x77` dataset. It contains 50 observations and 8 variables. The dataset is rather small, but it works well for illustration.
 
+```{r}
+library(dplyr)
+library(ALSO)
+```
+
 #### Quick data prep
 
 Currently only data frame or tibbles are supported as inputs to the function.
 
 ```{r}
-library(dplyr)
-
 # z-standardize all columns
 zstd <- function(x) {
     (x - mean(x)) / sd(x)
@@ -58,12 +61,3 @@ lm_also
 
 Here we use Ordinary Least Squares regression as the base regressor, 5-fold cross validation for scoring, and a list containg various artifacts from the algorithm:
 
-```{r, eval = F}
-lm_also$scores
-
-lm_also$squared_prediction_errors
-
-lm_also$adjusted_feature_rmse
-
-lm_also$adjusted_feature_weights
-```

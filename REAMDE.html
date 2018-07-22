@@ -128,16 +128,11 @@ $(document).ready(function () {
 <div id="install" class="section level1">
 <h1>Install</h1>
 <pre class="r"><code>devtools::install_github(&quot;dannymorris/ALSO&quot;)</code></pre>
-<pre><code>## Skipping install of 'ALSO' from a github remote, the SHA1 (ee4ef777) has not changed since last install.
-##   Use `force = TRUE` to force installation</code></pre>
 </div>
 <div id="example-using-random-forest" class="section level1">
 <h1>Example using Random Forest</h1>
 <p>In <em>Outlier Analysis</em> (C.C Aggarwal. Springer, 2017), the author recommends the use of random forests as the base regressor. Random forests are highly effective in both prediction and classification settings due to their robustness.</p>
 <p>Here we’ll examine the <code>datasets::state.x77</code> dataset. It contains 50 observations and 8 variables. The dataset is rather small, but it works well for illustration.</p>
-<div id="quick-data-prep" class="section level4">
-<h4>Quick data prep</h4>
-<p>Currently only data frame or tibbles are supported as inputs to the function.</p>
 <pre class="r"><code>library(dplyr)</code></pre>
 <pre><code>## Warning: package 'dplyr' was built under R version 3.4.4</code></pre>
 <pre><code>## 
@@ -148,12 +143,16 @@ $(document).ready(function () {
 <pre><code>## The following objects are masked from 'package:base':
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(ALSO)</code></pre>
+<div id="quick-data-prep" class="section level4">
+<h4>Quick data prep</h4>
+<p>Currently only data frame or tibbles are supported as inputs to the function.</p>
 <pre class="r"><code># z-standardize all columns
 zstd &lt;- function(x) {
     (x - mean(x)) / sd(x)
 }
 
-# 
+
 state_tbl &lt;- state.x77 %&gt;%
     dplyr::as_tibble() %&gt;%
     dplyr::mutate_all(zstd)</code></pre>
@@ -168,15 +167,57 @@ state_tbl &lt;- state.x77 %&gt;%
                       scores_only = TRUE)
 
 rf_also</code></pre>
-<pre><code>##  [1] 0.48634646 4.81795510 1.15442647 0.83933706 1.74146018 0.99222186
-##  [7] 0.50559303 0.60174430 0.68287100 0.77028515 3.67920394 0.19775204
-## [13] 0.67591346 0.09983242 0.28794794 0.21773709 0.54832813 0.60333228
-## [19] 1.19605706 0.45124234 0.37742540 0.62169415 0.62691884 0.51575028
-## [25] 0.48552415 0.59499348 0.09059458 3.28855624 0.31147768 0.38281396
-## [31] 2.09595334 0.69862341 0.32669810 1.58204343 0.11598635 0.49742929
-## [37] 1.16712426 0.49175319 1.17100817 0.56466237 0.50022848 0.16310787
-## [43] 1.30298433 0.89407429 0.65133775 0.11407715 1.68725099 0.99382616
-## [49] 0.47181243 0.61240582</code></pre>
+<pre><code>##  [1] 0.48886295 4.49019191 1.33764024 0.97275728 2.48480687 1.23625706
+##  [7] 0.71159343 0.71768401 0.63530189 0.79387042 3.99892915 0.16101810
+## [13] 0.49784814 0.17929654 0.24046203 0.15357960 0.62923145 0.63546160
+## [19] 1.36858078 0.48537912 0.62243629 0.39322366 0.42662503 0.56044189
+## [25] 0.55196281 0.41142756 0.07620307 3.02796702 0.38548297 0.51784782
+## [31] 2.21864630 0.79538120 0.26102300 1.84762268 0.22140247 0.48940086
+## [37] 0.61857390 0.61433280 1.33342914 0.63935218 0.49257010 0.16925239
+## [43] 1.35848082 1.25749507 0.53797529 0.13696253 1.36564922 1.05796434
+## [49] 0.26204704 0.50546275</code></pre>
+<p>Here we return only the outlier scores. Observations are given out-of-sample scores via 5-fold cross validation.</p>
+<pre class="r"><code>lm_also &lt;- ALSO::ALSO(data = state_tbl,
+                      model_function = lm,
+                      cross_validate = TRUE,
+                      n_folds = 5,
+                      scores_only = FALSE)
+
+lm_also</code></pre>
+<pre><code>## $scores
+##  [1] 0.52847676 2.83832411 1.31712154 0.52603158 0.71141487 0.65567727
+##  [7] 0.77569349 0.46302137 0.44345933 0.13304684 3.42022622 0.16914388
+## [13] 0.29299127 0.13868810 0.02871849 0.11973669 0.75233589 0.47057455
+## [19] 1.10760008 0.27551725 0.86509969 0.86129160 0.13685670 0.36991178
+## [25] 0.82767318 0.52440016 0.04594105 1.65398195 0.27834007 0.53064725
+## [31] 2.61303935 0.35862096 0.18448402 1.21629150 0.03419907 0.17756372
+## [37] 1.05435241 0.68692280 0.41464467 0.43493918 0.33239950 0.33155299
+## [43] 0.33465628 0.73381652 0.44371000 0.07650217 1.39523250 0.49876534
+## [49] 0.12669285 0.36210499
+## 
+## $squared_prediction_errors
+## # A tibble: 50 x 8
+##    Population       Income Illiteracy `Life Exp`  Murder `HS Grad`   Frost
+##         &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+##  1     0.849   0.125          0.266   0.147      0.656     0.113   1.16e-1
+##  2    22.3    33.5            1.12    5.58       0.149     0.252   2.86e+0
+##  3     1.04    0.601          0.392   0.248      0.395     1.74    2.70e+0
+##  4     0.432   0.511          0.00667 0.910      0.271     0.277   6.02e-3
+##  5    13.1     2.70           0.138   0.0402     0.00615   1.23    2.04e+0
+##  6     0.129   0.00478        0.0829  0.576      0.507     0.207   9.47e-1
+##  7     0.422   3.36           1.08    0.0764     0.133     0.160   1.48e+0
+##  8     0.645   0.947          0.00707 0.570      0.206     0.218   8.17e-1
+##  9     0.0954  0.000000463    0.390   0.00397    0.102     0.00121 1.85e+0
+## 10     0.297   0.284          0.00952 0.00000104 0.139     0.197   1.53e-4
+## # ... with 40 more rows, and 1 more variable: Area &lt;dbl&gt;
+## 
+## $adjusted_feature_weights
+## Population     Income Illiteracy   Life Exp     Murder    HS Grad 
+##  0.0000000  0.0000000  0.4173486  0.3341125  0.4853916  0.3126730 
+##      Frost       Area 
+##  0.1243806  0.0000000</code></pre>
+<p>Here we use Ordinary Least Squares regression as the base regressor, 5-fold cross validation for scoring, and a list containg various artifacts from the algorithm:</p>
+<pre class="r"><code>purrr::map(lm_also, class)</code></pre>
 </div>
 </div>
 
