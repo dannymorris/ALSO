@@ -30,7 +30,7 @@ state_tbl <- state.x77 %>%
 #### Using the ALSO() function
 
 ```{r}
-rf_also <- ALSO(data = df,
+rf_also <- ALSO::ALSO(data = df,
                       model_function = randomForest::randomForest,
                       cross_validate = TRUE,
                       n_folds = 5,

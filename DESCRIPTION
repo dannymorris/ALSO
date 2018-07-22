@@ -1,12 +1,13 @@
 Package: ALSO
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Attribute-Wise Learning for Scoring Outliers (ALSO)
 Version: 0.1.0
-Author: Who wrote it
+Author: Danny Morris
 Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Description: ALSO is an unsupervised anomaly detection algorithm that uses predictive
+    modeling to product outlier scores. Observation that consistently deviate from 
+    expected (predicted) values are scored highly and represent outliers/anomalies.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: purrr,
