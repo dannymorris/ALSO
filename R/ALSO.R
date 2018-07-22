@@ -152,7 +152,6 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
             list(
                 scores = outlier_scores,
                 squared_prediction_errors = squared_prediction_errors,
-                adjusted_feature_rmse = adjusted_feature_rmse,
                 adjusted_feature_weights = adjusted_feature_weights
             ) %>%
                 purrr::map_at(., 2:4, function(x) setNames(x, nm = original_colnames))
