@@ -1,0 +1,38 @@
+# Attribute-Wise Learning for Scoring Outliers (ALSO)
+
+*Attribute-wise Learning for Scoring Outliers* (ALSO) is an unsupervised anomaly detection algorithm for multidimensional data. The main goal is to automate separate predictive models for each feature in the dataset. In each model, one feature in the dataset is the target and the remaining are predictors. A classifier or regressor is called to model the relationships. Observations are scored and compared to true values, and a numerical outlier score is returned for each observation based on the magnitude of deviation from expected values. Given the vector of numeric outlier scores, simple univariate techniques can be used to extract insights. Larger outlier scores suggest greater outlierness.
+
+# Install
+
+```{r}
+devtools::install_github("dannymorris/ALSO")
+```
+
+# Example using Random Forest
+
+In *Outlier Analysis* (C.C Aggarwal. Springer, 2017), the author recommends the use of random forests as the base regressor. Random forests are highly effective in both prediction and classification settings due to their robustness.
+
+Here we'll examine the `datasets::state.x77` dataset. It contains 50 observations and 8 variables. The dataset is rather small, but it works well for illustration.
+
+#### Quick data prep
+
+```{r}
+# z-standardize all columns
+zstd <- function(x) {
+    (x - mean(x)) / sd(x)
+}
+
+state_tbl <- state.x77 %>%
+    as_tibble() %>%
+    dplyr::mutate_all(zstd)
+```
+
+#### Using the ALSO() function
+
+```{r}
+rf_also <- ALSO(data = df,
+                      model_function = randomForest::randomForest,
+                      cross_validate = TRUE,
+                      n_folds = 5,
+                      scores_only = TRUE)
+```

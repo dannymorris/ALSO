@@ -41,22 +41,21 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
     #
     #
     # Ensure input is a data.frame or tibble data structure comprised of
-    # factors, integers, or numeric values, or a numeric matrix
+    # factors, integers, or numeric values, or a numeric matrix. Store a
+    # vector of original column names to re-substitute at end
     #
     #
 
 
-    if (!isTRUE(check_class_structure(data, c("data.frame", "tbl"))) &&
-        !isTRUE(check_class_structure(data, "matrix", T))) {
-        stop("improper data structre - data.frame or numeric matrices accepted")
+    if (!is.data.frame(data)) {
+        stop("Input data must be a data frame or a tibble. Try data = as_tibble(...)")
     }
 
-    if ("character" %in% sapply(data, class)) {
-        data %<>%
-            dplyr::mutate_if(is.character, as.factor)
-    }
+    original_colnames <- colnames(data)
 
-    data %<>% clear_colname_spaces()
+    data %<>%
+        clear_colname_spaces() %>%
+        mutate_if(is.character, as.factor)
 
 
     #
@@ -98,18 +97,23 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
         predictions <- purrr::map(folds, function(x) {
             training_folds <- data[-x, ]
             testing_folds <- data[x, ]
-            cv_models <- purrr::map(init_formulas, model_function, data = training_folds)
-            predictions <- purrr::map(cv_models, predict, newdata = testing_folds) %>%
-                setNames(nm = colnames(data)) %>%
-                dplyr::bind_rows()
+            cv_models <- purrr::map(init_formulas, model_function,
+                                    data = training_folds)
+            pred <- purrr::map(cv_models, predict, newdata = testing_folds) %>%
+                setNames(nm = colnames(data))
         }) %>%
-            dplyr::bind_rows()
+            purrr::map(., bind_cols) %>%  # restore test folds with predictions
+            dplyr::bind_rows() %>% #
+            mutate(fold_id = purrr::flatten_int(folds)) %>% # index rows to match original data
+            arrange(fold_id) %>%
+            select(-fold_id)
 
     } else {
 
         models <- purrr::map(init_formulas, model_function, data = data)
 
-        predictions <- purrr::map(models, predict)
+        predictions <- purrr::map(models, predict) %>%
+            setNames(nm = colnames(data))
     }
 
     #
@@ -120,7 +124,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
     #
     #
 
-    squared_prediction_errors <- purrr::map2(as.list(data), predictions, square_errors) %>%
+    squared_prediction_errors <- purrr::map2(predictions, as.list(data), square_errors) %>%
         dplyr::bind_cols()
 
     adjusted_feature_rmse <- purrr::map_dbl(squared_prediction_errors,
@@ -149,11 +153,9 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
                 scores = outlier_scores,
                 squared_prediction_errors = squared_prediction_errors,
                 adjusted_feature_rmse = adjusted_feature_rmse,
-                adjusted_feature_weights = adjusted_feature_weights)
+                adjusted_feature_weights = adjusted_feature_weights
+            ) %>%
+                map_at(., 2:4, function(x) setNames(x, nm = original_colnames))
         )
     }
 }
-
-
-
-

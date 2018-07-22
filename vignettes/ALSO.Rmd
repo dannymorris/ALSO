@@ -21,10 +21,13 @@ Attirubte-wise Learning for SCoring Outliers (ALSO) is an outlier detection tech
 This document will illustrate the use of the **ALSO package**. It was created for the sole purpose of making the ALSO technique easily available to R users. The package currently contains a single function, `ALSO()`.
 
 ```{r}
-# devtools::install_github("dannymorris/ALSO")
-library(ALSO)
+library(ALSO) # devtools::install_github("dannymorris/ALSO")
 
 library(dplyr)
+library(corrplot)
+library(plotly)
+
+sessionInfo()
 ```
 
 # Data
@@ -37,7 +40,7 @@ states
 
 This dataset is relatively small at 50 rows and 8 variables. Later on we'll explore a higher dimenional dataset and observe the results.
 
-# Data Processing
+# Center and scale variables for preprocessing
 
 It is customary to standardize numeric variables prior to predictive modeling in order to eliminate the effects of differences in original measurement scales. Let's apply the common z-standardization technique.
 
@@ -46,7 +49,47 @@ states_scaled <- states %>%
     mutate_all(funs(scale))
 ```
 
-# ALSO with Random Forest
+# Univariate density plots
+
+```{r}
+par(mfrow = c(3,3),
+    mar = c(3,3,2,2))
+
+for (i in seq_along(states_scaled)) {
+    pull(states_scaled[, i]) %>%
+        density() %>%
+        plot(main = colnames(states_scaled[, i]),
+             xlab = "")
+}
+```
+
+Population, Income, and Area show potential outliers in the right-side tails.
+
+# Bivariate linear correlations
+
+```{r}
+pairs(states_scaled)
+
+cor(states_scaled) %>% round(., 2)
+```
+
+The correlation plot and matrix show quite a few moderate to strong correlations in both positive and negative directions.
+
+# ALSO with ordinary least squares regression
+
+In spite of their simplicity, the ordinary least squares (OLS) regression model can be an overall effective solution. The current dataset is small, but OLS is a very efficient algorithm which is suitable for processing much larger datasets quickly. 
+
+```{r}
+lm_also <- ALSO(data = states_scaled, model_function = lm, cross_validate = F)
+```
+
+### Scores
+
+```{r}
+
+```
+
+# ALSO with random forest regressor
 
 A random forest works quite nicely in the context of ALSO for a few reasons:
 
@@ -59,10 +102,24 @@ rf_also <- ALSO(data = states_scaled, model_function = randomForest::randomFores
                 cross_validate = FALSE, scores_only = F)
 ```
 
-### Output contents
+### Outlier scores
+
+```{r}
+tibble(state = rownames(state.x77), 
+       outlier_score = rf_also$scores %>% as.vector) %>%
+    arrange(desc(outlier_score))
+
+
+plot(density(rf_also$scores), main = "Outlier Scores Density Estimate",
+     xlab = "ALSO Score")
+```
+
+### Explore function output
 
 ```{r}
 names(rf_also)
+
+lapply(rf_also, class)
 ```
 
 ### Outlier scores
@@ -77,29 +134,31 @@ Present of outliers reflected in the severe right skewness of the distribution o
 ### Feature weights
 
 ```{r}
+range(rf_also$adjusted_feature_weights)
+
 rf_also$adjusted_feature_weights %>% 
     sort(decreasing = T) %>%
-    barplot(las = 2, main = "Adjusted Feature Weights")
+    barplot(las = 2, main = "Adjusted feature weights")
 ```
 
-The ALSO technique using a random forest as the regressor is detecting outliers on the basis of Murder, HSGrad, Illiteracy, and LifeExp. Note that none of the features are very predictable.
+The ALSO technique using a random forest as the regressor is detecting outliers primarily on the basis of Murder, HSGrad, Illiteracy, and LifeExp, though it appears that the features are only moderately correlated.
 
-# Visualization
+# Dimension reduction via PCA with visualization of scores
 
-Principal components analysis is a great technique for visualizing multidimensional data in fewer dimensions.
+Principal components analysis (PCA) is a great technique for visualizing multidimensional data in fewer dimensions. 
 
 ```{r}
 pca_states <- princomp(states_scaled)
-summary(pca_states, loadings = T)
+
+pca_states %>%
+    QuickR::print_pca(.)
 ```
 
-It appears that the top 3 principal components explain nearly 80% of the variation in the original dataset.
+It appears that the top 3 principal components explain nearly 80% of the variation in the original dataset. Let's inspect a 3-D scatterplot for potential outliers.
 
 ```{r}
 pca_states$scores %>%
     as_tibble() %>%
     mutate(outlier_scores = rf_also$scores) %>%
-    ggplot(aes(x = Comp.1, y = Comp.2)) +
-    geom_point(aes(color = outlier_scores), size = 3) +
-    theme_minimal()
+    plot_ly(x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, type = "scatter3d")
 ```
