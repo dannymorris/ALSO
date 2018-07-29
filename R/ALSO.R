@@ -24,7 +24,7 @@
 #' (no impact on scoring).
 #' @references see "Outlier Analysis" (C.C Aggarwal. Springer, 2017) section 7.7
 #' @examples
-#' also <- ALSO_RF(data = iris, scores_only = FALSE)#'
+#' also <- ALSO_RF(data = iris, scores_only = FALSE)
 #' also$scores
 #' also$squared_prediction_errors
 #' also$adjusted_feature_weights
