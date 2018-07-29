@@ -24,7 +24,7 @@
 #' feature weight of 0 (no impact on scoring).
 #' @references see "Outlier Analysis" (C.C Aggarwal. Springer, 2017) section 7.7
 #' @examples
-#' # OLS with cross validation for out of sample scoring
+#' # OLS with cross validation for out of sample m
 #' dtree_also <- ALSO(data = scale(state.x77), model_function = rpart::rpart,
 #' cross_validate = TRUE, n_folds = 10, score_only = FALSE)
 #'
@@ -35,8 +35,19 @@
 #' @importFrom magrittr %<>%
 #' @export
 
-ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
-                 scores_only = TRUE, ...) {
+ALSO <- function(data, model_function, cross_validate = TRUE,
+                 n_folds = 5, scores_only = TRUE, ...) {
+
+    #
+    #
+    # Default base learner is a random forest from the ranger package.
+    #
+    #
+
+    if (missing(model_function)) {
+        message("model_function unspecified. Random forest being used as base learner")
+        model_function <- ranger::ranger
+    }
 
     #
     #
@@ -98,9 +109,11 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
             training_folds <- data[-x, ]
             testing_folds <- data[x, ]
             cv_models <- purrr::map(init_formulas, model_function,
-                                    data = training_folds)
-            pred <- purrr::map(cv_models, predict, newdata = testing_folds) %>%
+                                    data = training_folds, ...)
+            cv_model_list <- purrr::map(cv_models, predict, data = testing_folds) %>%
                 setNames(nm = colnames(data))
+
+            predictions <- purrr::map(cv_model_list, function(x) x$predictions)
         }) %>%
             purrr::map(., bind_cols) %>%  # restore test folds with predictions
             dplyr::bind_rows() %>% #
@@ -110,11 +123,30 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
 
     } else {
 
-        models <- purrr::map(init_formulas, model_function, data = data)
+        models <- purrr::map(init_formulas, model_function, data = data, ...)
 
-        predictions <- purrr::map(models, predict) %>%
+        model_list <- purrr::map(models, predict, data = data) %>%
             setNames(nm = colnames(data))
+
+        predictions <- purrr::map(model_list, function(x) x$predictions)
     }
+
+    # if user-specified model function
+
+    # if (user_model) {
+    #     myf <- function(formula, data) {
+    #         m <- rpart::rpart(formula = formula, data = data)
+    #         p <- predict(m)
+    #
+    #         list(data = data,
+    #              predictions = p)
+    #     }
+    #
+    #     predictions <- purrr::map(init_formulas, function(x) {
+    #         myf(x, data = data)$predictions
+    #     }) %>%
+    #         setNames(nm = colnames(data))
+    # }
 
     #
     #
@@ -132,7 +164,6 @@ ALSO <- function(data, model_function, cross_validate = TRUE,  n_folds = 5,
         ifelse(. > 1, 1, .)
 
     adjusted_feature_weights <- adjusted_feature_rmse %>%
-        ifelse(. > 1, 1, .) %>%
         purrr::map_dbl(., function(x) 1 - x)
 
     outlier_scores <- purrr::map2(squared_prediction_errors, adjusted_feature_weights,
