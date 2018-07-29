@@ -1,7 +1,6 @@
 #' Attribute-wise Learning for Scoring Outliers (ALSO) with Random Forest.
 #'
 #' @param data a data.frame, tibble, or numeric matrix
-#' @param model_function a model function, e.g. lm (see details)
 #' @param cross_validate logical, if TRUE then use k-fold cross-validation for scoring
 #' @param n_folds an integer specifying the number of folds if cross_validate = T.
 #' Defaults to 5
@@ -10,8 +9,7 @@
 #' @param ... additional arguments passed to the modeling function
 #' @return If scores_only = TRUE, a numeric vector of outlier scores is returned.
 #' If FALSE, return a list containing outlier scores, squared prediction errors,
-#' adjusted feature RMSE (see details), and adjusted feature weights for scoring
-#' (see details)
+#' and adjusted feature weights (see details)
 #' @details ALSO_RF() uses random forests (from the ranger package) to compute a
 #' number of regressors/classifiers equal to the number of columns in the input
 #' dataset. Random forest models are chosen for this method due to their flexibility

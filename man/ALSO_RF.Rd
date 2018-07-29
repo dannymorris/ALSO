@@ -18,14 +18,11 @@ Defaults to 5}
 return a list with additional output (see return)}
 
 \item{...}{additional arguments passed to the modeling function}
-
-\item{model_function}{a model function, e.g. lm (see details)}
 }
 \value{
 If scores_only = TRUE, a numeric vector of outlier scores is returned.
 If FALSE, return a list containing outlier scores, squared prediction errors,
-adjusted feature RMSE (see details), and adjusted feature weights for scoring
-(see details)
+and adjusted feature weights (see details)
 }
 \description{
 Attribute-wise Learning for Scoring Outliers (ALSO) with Random Forest.
