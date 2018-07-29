@@ -8,8 +8,6 @@ output:
 ---
 
 
-# Attribute-Wise Learning for Scoring Outliers (ALSO)
-
 *Attribute-wise Learning for Scoring Outliers* (ALSO) is an unsupervised anomaly detection algorithm for multidimensional data. The main goal is to automate separate predictive models for each feature in the dataset. In each model, one feature in the dataset is the target and the remaining are predictors. A classifier or regressor is called to model the relationships. Observations are scored and compared to true values, and a numerical outlier score is returned for each observation based on the magnitude of deviation from expected values. Given the vector of numeric outlier scores, simple univariate techniques can be used to extract insights. Larger outlier scores suggest greater outlierness.
 
 # Install
@@ -18,9 +16,7 @@ output:
 devtools::install_github("dannymorris/ALSO")
 ```
 
-# Example using Random Forest
-
-In *Outlier Analysis* (C.C Aggarwal. Springer, 2017), the author recommends the use of random forests as the base regressor. Random forests are highly effective in both prediction and classification settings due to their robustness.
+In *Outlier Analysis* (C.C Aggarwal. Springer, 2017), the author recommends the use of **random forests** as the base regressor/classifier. Random forest are highly robust regressors and classifiers due to bagging and ensembling.
 
 Here we'll examine the `datasets::state.x77` dataset. It contains 50 observations and 8 variables. The dataset is rather small, but it works well for illustration.
 
@@ -29,7 +25,7 @@ library(dplyr)
 library(ALSO)
 ```
 
-#### Quick data prep
+## Quick data prep
 
 Currently only data frame or tibbles are supported as inputs to the function.
 
@@ -38,18 +34,18 @@ Currently only data frame or tibbles are supported as inputs to the function.
 zstd <- function(x) {
     (x - mean(x)) / sd(x)
 }
+```
 
-
+```{r}
 state_tbl <- state.x77 %>%
     dplyr::as_tibble() %>%
     dplyr::mutate_all(zstd)
 ```
 
-#### Using the ALSO() function
+## Using the ALSO_RF() function
 
 ```{r}
-rf_also <- ALSO::ALSO(data = state_tbl,
-                      model_function = randomForest::randomForest,
+rf_also <- ALSO::ALSO_RF(data = state_tbl,
                       cross_validate = TRUE,
                       n_folds = 5,
                       scores_only = TRUE)
@@ -60,14 +56,9 @@ rf_also
 Here we return only the outlier scores. Observations are given out-of-sample scores via 5-fold cross validation.
 
 ```{r}
-lm_also <- ALSO::ALSO(data = state_tbl,
-                      model_function = lm,
-                      cross_validate = TRUE,
-                      n_folds = 5,
-                      scores_only = FALSE)
-
-lm_also
+state_tbl %>%
+    mutate(also_score = rf_also) %>%
+    mutate(state = rownames(state.x77)) %>%
+    arrange(desc(also_score)) %>%
+    select(state, also_score) 
 ```
-
-Here we use Ordinary Least Squares regression as the base regressor, 5-fold cross validation for scoring, and a list containg various artifacts from the algorithm:
-
