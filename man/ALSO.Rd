@@ -44,7 +44,7 @@ Feature RMSE values greater than 1 are adjusted to 1, leading to an adjusted
 feature weight of 0 (no impact on scoring).
 }
 \examples{
-# OLS with cross validation for out of sample scoring
+# OLS with cross validation for out of sample m
 dtree_also <- ALSO(data = scale(state.x77), model_function = rpart::rpart,
 cross_validate = TRUE, n_folds = 10, score_only = FALSE)
 
