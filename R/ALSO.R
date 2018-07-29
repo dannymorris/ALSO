@@ -1,4 +1,4 @@
-#' Attribute-wise Learning for Scoring Outliers (ALSO).
+#' Attribute-wise Learning for Scoring Outliers (ALSO) with Random Forest.
 #'
 #' @param data a data.frame, tibble, or numeric matrix
 #' @param model_function a model function, e.g. lm (see details)
@@ -12,31 +12,30 @@
 #' If FALSE, return a list containing outlier scores, squared prediction errors,
 #' adjusted feature RMSE (see details), and adjusted feature weights for scoring
 #' (see details)
-#' @details  The model_function argument takes a function as its input. For example,
-#' either "lm" or lm will work to score using least squares regression. Third-party
-#' packages containing the modeling function need to be installed and loaded via
-#' library() or referenced (e.g. rpart::rpart).
+#' @details ALSO_RF() uses random forests (from the ranger package) to compute a
+#' number of regressors/classifiers equal to the number of columns in the input
+#' dataset. Random forest models are chosen for this method due to their flexibility
+#' (use for classification and regression) and robustness. Outlier scores for each
+#' observation are determined by computing the aggregate errors from the individual
+#' models.
 #'
 #' Feature weights are critical in determining outlier scores. Features with high
 #' RMSE are given less weight than features with lower RMSE. The adjusted feature
-#' weights are found by subtracting the feature RMSE from 1.
-#' Feature RMSE values greater than 1 are adjusted to 1, leading to an adjusted
-#' feature weight of 0 (no impact on scoring).
+#' weights are found by subtracting the feature RMSE from 1.Feature RMSE values
+#' greater than 1 are adjusted to 1, leading to an adjusted feature weight of 0
+#' (no impact on scoring).
 #' @references see "Outlier Analysis" (C.C Aggarwal. Springer, 2017) section 7.7
 #' @examples
-#' # OLS with cross validation for out of sample m
-#' dtree_also <- ALSO(data = scale(state.x77), model_function = rpart::rpart,
-#' cross_validate = TRUE, n_folds = 10, score_only = FALSE)
+#' also <- ALSO_RF(data = iris, scores_only = FALSE)#'
+#' also$scores
+#' also$squared_prediction_errors
+#' also$adjusted_feature_weights
 #'
-#' dtree_also$scores
-#' dtree_also$squared_prediction_errors
-#' dtree_also$feature_rmse
-#' dtree_also$feature_weights
+#' ALSO_RF(data = iris, num.trees = 100) # pass arguments from ranger::ranger()
 #' @importFrom magrittr %<>%
 #' @export
-
-ALSO <- function(data, model_function, cross_validate = TRUE,
-                 n_folds = 5, scores_only = TRUE, ...) {
+ALSO_RF <- function(data, cross_validate = TRUE, n_folds = 5, scores_only = TRUE,
+                    ...) {
 
     #
     #
@@ -44,10 +43,10 @@ ALSO <- function(data, model_function, cross_validate = TRUE,
     #
     #
 
-    if (missing(model_function)) {
-        message("model_function unspecified. Random forest being used as base learner")
-        model_function <- ranger::ranger
-    }
+    # if (missing(model_function)) {
+    #     message("model_function unspecified. Random forest being used as base learner")
+    #     model_function <- ranger::ranger
+    # }
 
     #
     #
@@ -59,7 +58,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,
 
 
     if (!is.data.frame(data)) {
-        stop("Input data must be a data frame or a tibble. Try data = as_tibble(...)")
+        stop("Input data must be a data.frame or a tibble")
     }
 
     original_colnames <- colnames(data)
@@ -108,7 +107,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,
         predictions <- purrr::map(folds, function(x) {
             training_folds <- data[-x, ]
             testing_folds <- data[x, ]
-            cv_models <- purrr::map(init_formulas, model_function,
+            cv_models <- purrr::map(init_formulas, ranger::ranger,
                                     data = training_folds, ...)
             cv_model_list <- purrr::map(cv_models, predict, data = testing_folds) %>%
                 setNames(nm = colnames(data))
@@ -123,7 +122,7 @@ ALSO <- function(data, model_function, cross_validate = TRUE,
 
     } else {
 
-        models <- purrr::map(init_formulas, model_function, data = data, ...)
+        models <- purrr::map(init_formulas, ranger::ranger, data = data, ...)
 
         model_list <- purrr::map(models, predict, data = data) %>%
             setNames(nm = colnames(data))

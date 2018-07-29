@@ -1,12 +1,16 @@
 Package: ALSO
 Type: Package
-Title: Attribute-Wise Learning for Scoring Outliers (ALSO)
+Title: Attribute-Wise Learning for Scoring Outliers (ALSO) using Random Forests
 Version: 0.1.0
 Author: Danny Morris
 Maintainer: The package maintainer <yourself@somewhere.net>
-Description: ALSO is an unsupervised anomaly detection algorithm that uses predictive
-    modeling to product outlier scores. Observation that consistently deviate from 
-    expected (predicted) values are scored highly and represent outliers/anomalies.
+Description: ALSO is an anomaly detection algorithm that uses predictive models
+    to produce outlier scores. For a given dataset, separate models are fit for
+    each feature. In each model, one feature is the target and the remaining features
+    are predictors. Observations that consistently deviate from expected (predicted) 
+    values across the individual models are scored highly and may represent 
+    outliers/anomalies. This package uses random forests (from the ranger package)
+    to build individual regressors and/or classifiers.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
