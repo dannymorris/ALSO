@@ -1,5 +1,5 @@
 ---
-title: "Attribute Wise Learning for Scoring Outliers"
+title: "Attribute Wise Learning for Scoring Outliers using Random Forests"
 author: "Danny Morris"
 date: "July 18, 2018"
 output: 
@@ -89,7 +89,6 @@ rf_also <- ALSO_RF(data = states_scaled, cross_validate = FALSE,
 
 rf_also_cv <- ALSO_RF(data = states_scaled, cross_validate = TRUE, 
                       scores_only = FALSE)
-
 ```
 
 
