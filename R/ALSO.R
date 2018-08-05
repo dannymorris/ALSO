@@ -174,11 +174,11 @@ ALSO_RF <- function(data, cross_validate = TRUE, n_folds = 5, scores_only = TRUE
     #
 
     if (scores_only == TRUE) {
-        return(outlier_scores)
+        as.vector(outlier_scores) %>% return(.)
     } else {
         return(
             list(
-                scores = outlier_scores,
+                scores = as.vector(outlier_scores),
                 squared_prediction_errors = squared_prediction_errors,
                 adjusted_feature_weights = adjusted_feature_weights
             ) %>%

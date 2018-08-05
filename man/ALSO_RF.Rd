@@ -42,7 +42,7 @@ greater than 1 are adjusted to 1, leading to an adjusted feature weight of 0
 (no impact on scoring).
 }
 \examples{
-also <- ALSO_RF(data = iris, scores_only = FALSE)#'
+also <- ALSO_RF(data = iris, scores_only = FALSE)
 also$scores
 also$squared_prediction_errors
 also$adjusted_feature_weights

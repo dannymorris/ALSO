@@ -1,0 +1,162 @@
+---
+title: "Attribute Wise Learning for Scoring Outliers"
+author: "Danny Morris"
+date: "July 18, 2018"
+output: 
+    html_document:
+        theme: lumen
+        toc: true
+        df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      cache = FALSE)
+```
+
+# Overview
+
+Attirubte-wise Learning for Scoring Outliers (ALSO) is an outlier detection technique for standard multidimensional datasets. For each feature in the dataset, a predictive model is constructed in which the reference feature is the target and the remaining features are predictors. When a feature is generally predictable with good accuracy, observations deviating significantly from predicted values may be outliers. Observations with significant deviations across many predictable features may be strong outliers.
+
+This document will illustrate the use of the **ALSO package**. It was created for the sole purpose of making the ALSO technique easily available to R users. The package currently contains a single function, `ALSO_RF()`.
+
+```{r}
+library(ALSO) # devtools::install_github("dannymorris/ALSO")
+
+library(dplyr)
+library(corrplot)
+library(plotly)
+
+sessionInfo()
+```
+
+# Data
+
+```{r}
+states <- state.x77 %>% as_tibble()
+
+states
+```
+
+This dataset is relatively small at 50 rows and 8 variables. Later on we'll explore a higher dimenional dataset and observe the results.
+
+# Center and scale variables for preprocessing
+
+It is customary to standardize numeric variables prior to predictive modeling in order to eliminate the effects of differences in original measurement scales. Let's apply the common z-standardization technique.
+
+```{r}
+states_scaled <- states %>%
+    mutate_all(funs(scale))
+```
+
+# Univariate density plots
+
+```{r}
+par(mfrow = c(3,3),
+    mar = c(3,3,2,2))
+
+for (i in seq_along(states_scaled)) {
+    pull(states_scaled[, i]) %>%
+        density() %>%
+        plot(main = colnames(states_scaled[, i]),
+             xlab = "")
+}
+```
+
+Population, Income, and Area show potential outliers in the right-side tails.
+
+# Bivariate linear correlations
+
+```{r}
+pairs(states_scaled)
+
+cor(states_scaled) %>% round(., 2)
+```
+
+The correlation plot and matrix show quite a few moderate to strong correlations in both positive and negative directions.
+
+# ALSO with random forest regressor
+
+A random forest works quite nicely in the context of ALSO for a few reasons:
+
+1. can do prediction or classification
+2. robust due to ensembling
+3. can detect nonlinear relationships
+
+```{r}
+rf_also <- ALSO_RF(data = states_scaled, cross_validate = FALSE, 
+                   scores_only = FALSE)
+
+rf_also_cv <- ALSO_RF(data = states_scaled, cross_validate = TRUE, 
+                      scores_only = FALSE)
+
+```
+
+
+Note that cross validation scoring (ensures that each point receives an out of sample score) is significantly more computationally intensive than the in-sample scoring.
+
+```{r, eval = F}
+microbenchmark::microbenchmark(
+    ALSO_RF(data = states_scaled, cross_validate = FALSE),
+    ALSO_RF(data = states_scaled, cross_validate = TRUE)
+)
+
+# Unit: milliseconds
+#                                                                    expr
+#  ALSO_RF(data = states_scaled, cross_validate = FALSE, scores_only = F)
+#   ALSO_RF(data = states_scaled, cross_validate = TRUE, scores_only = F)
+#        min        lq      mean    median        uq       max neval
+#   421.8709  451.9757  482.1679  466.6313  481.8332  828.7061   100
+#  2013.3989 2081.6085 2178.1072 2121.9938 2202.0590 2789.7553   100
+```
+
+Cross validation scoring takes rougly 4.5 times longer.
+
+## Outlier scores
+
+```{r}
+plot(density(rf_also$scores), main = "Outlier Scores Density Estimate",
+     xlab = "ALSO Score")
+```
+
+Present of outliers reflected in the severe right skewness of the distribution of outlier scores.
+
+## Prediction errors
+
+Squared prediction errors for all *n* points across all *k* feature models.
+
+```{r}
+rf_also$squared_prediction_errors
+```
+
+The squared prediction error matrix is multiplied by the feature weights to produce the total outlier score.
+
+## Feature weights
+
+```{r}
+rf_also$adjusted_feature_weights
+```
+
+# Visualization of outlier scores via principal components analysis
+
+Principal components analysis (PCA) is an effective technique for visualizing multidimensional data in fewer dimensions. 
+
+```{r}
+pca_states <- princomp(states_scaled)
+
+summary(pca_states)
+```
+
+It appears that the top 3 principal components explain nearly 80% of the variation in the original dataset. Let's inspect a 3-D scatterplot for potential outliers.
+
+```{r}
+pca_states$scores %>%
+    as_tibble() %>%
+    mutate(outlier_scores = rf_also$scores) %>%
+    plotly::plot_ly(x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
+                    color = ~outlier_scores, type = "scatter3d")
+```
+
+# A comment on efficiency
+
+Currently the `ALSO_RF()` function is not efficient for medium to large data sets. This is especially true for wider data sets with many features. The function was recently tested on a 30,000 x 30 dataset and required approximately 30 seconds to compute on a Delll i9 with 8GB of RAM without cross validation scoring. 
